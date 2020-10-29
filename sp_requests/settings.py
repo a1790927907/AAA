@@ -18,7 +18,7 @@ DATA_MANAGE_NUM = 16
 
 #mysql配置
 MYSQL_USERNAME = 'root'
-MYSQL_PWD = ''
+MYSQL_PWD = '0365241lk'
 MYSQL_DATABASE = 'baidu'
 
 #可根据CPU核心数设定进程数量
