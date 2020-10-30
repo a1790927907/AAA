@@ -8,8 +8,11 @@
 from middle import *
 from multiprocessing import Process
 import time
-
+from orm import SaveData
+from settings import *
 if __name__ == '__main__':
+    sql = SaveData(MYSQL_USERNAME,MYSQL_PWD,MYSQL_DATABASE)
+    sql.create_database('bd')
     queue_action = sp_queue.QueueAction(**configs)
     redis_cursor = queue_action.redis_cursor
     process_list = []

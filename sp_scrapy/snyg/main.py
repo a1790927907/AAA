@@ -7,8 +7,16 @@ def st():
     cmdline.execute('scrapy crawl snygsp'.split())
 
 if __name__ == '__main__':
+    try:
+        with open('file.txt','r') as f:
+            c = f.read()
+            c = c.split(',')
+    except:
+        pass
     process_list = []
     queue_action = QueueAction(**config)
+    queue_action.save_key_words(c)
+    time.sleep(0.1)
     all_key_words = queue_action.get_key_words()
     if all_key_words != []:
         while True:

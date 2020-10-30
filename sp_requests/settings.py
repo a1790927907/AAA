@@ -1,7 +1,7 @@
 #redis配置
 configs = {
     'host':'localhost',
-    'password':'',
+    'password':'0365241lk',
     'port':6379,
 }
 
