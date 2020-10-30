@@ -1,0 +1,29 @@
+version: '3.1'
+services:
+  redis:
+    restart: always
+    image: daocloud.io/library/redis:2.8.21
+    container_name: redis
+    ports:
+      - 6379:6379
+    command: redis-server --appendonly yes
+
+  mongodb:
+    restart: always
+    image: daocloud.io/library/mongo:3.5
+    container_name: mongodb
+    ports:
+      - 27017:27017
+
+  custom_scrapy:
+    build:
+      context: ./
+      dockerfile: dockerfile_scrapy
+    image: custom_scrapy:1.0
+    container_name:sp_scrapy
+    links:
+      - redis
+      - mongodb
+    depends_on:
+      - redis
+      - mongodb

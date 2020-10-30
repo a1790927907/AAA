@@ -1,0 +1,31 @@
+version: '3.1'
+services:
+  mysql:
+    restart: always
+    images: daocloud.io/library/mysql:8.0.20
+    container_name: mysql
+    ports:
+      - 3306:3306
+    environment:
+      MYSQL_ROOT_PASSWORD: 0365241lk
+      TZ: Asia/Shanghai
+  
+  redis:
+    restart: always
+    images: daocloud.io/library/redis:2.8.21
+    container_name: redis
+    ports:
+      - 6379:6379
+
+  custom_requests:
+    build:
+      context: ./
+      dockerfile: dockerfile_requests
+    image: custom_requests:1.0
+    container_name: sp_requests
+    links:
+      - mysql
+      - redis
+    depends_on:
+      - mysql
+      - redis

@@ -1,0 +1,6 @@
+pymongo
+redis
+scrapy
+scrapy-redis
+pyexecjs
+numpy
