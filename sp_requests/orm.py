@@ -2,7 +2,7 @@ import pymysql
 from datetime import datetime
 #数据库操作
 class SaveData(object):
-    def __init__(self,username,password,dbname,host='localhost'):
+    def __init__(self,username,password,dbname,host='mysql'):
         self.host = host
         self.uername = username
         self.password = password

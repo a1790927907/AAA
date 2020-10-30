@@ -10,7 +10,7 @@ from pymongo import MongoClient
 
 class SnygPipeline:
     def open_spider(self,spider):
-        self.mongo = MongoClient('localhost',27017)
+        self.mongo = MongoClient('mongodb',27017)
         self.collection = self.mongo.suning.goods
 
     def process_item(self, item, spider):

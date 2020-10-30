@@ -95,13 +95,13 @@ ITEM_PIPELINES = {
 UA_LIST = ['Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.132 Safari/537.36','Mozilla/5.0 (Windows NT 6.1; WOW64; rv:6.0) Gecko/20100101 Firefox/6.0','Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/534.50 (KHTML, like Gecko) Version/5.1 Safari/534.50','Opera/9.80 (Windows NT 6.1; U; zh-cn) Presto/2.9.168 Version/11.50']
 
 config = {
-   'host':'localhost',
-   'password':'0365241lk',
+   'host':'redis',
+   'password':'',
    'port':6379,
 }
 
-MAX_PROCESS = 4
-REDIS_HOST = '127.0.0.1'
+MAX_PROCESS = 2
+REDIS_HOST = 'redis'
 
 REDIS_PORT = 6379
 

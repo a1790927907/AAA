@@ -11,6 +11,9 @@ if __name__ == '__main__':
         with open('file.txt','r') as f:
             c = f.read()
             c = c.split(',')
+        with open('file.txt','w') as f1:
+            f1.write('')
+            f1.flush()
     except:
         pass
     process_list = []
@@ -33,6 +36,7 @@ if __name__ == '__main__':
             for p in process_list:
                 if not p.is_alive():
                     process_list.remove(p)
+                    print(f'{p.name}已结束')
 
             if process_list == [] and queue_action.get_key_words() == []:
                 break

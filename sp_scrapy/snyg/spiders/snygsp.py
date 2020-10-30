@@ -103,7 +103,8 @@ class SnygspSpider(scrapy.Spider):
                 c = '2'
         else:
             c = '0'
-        _ = execjs.eval('new Date().getTime()')
+        node = execjs.get(execjs.runtime_names.Node)
+        _ = node.eval('new Date().getTime()')
         info_url = f'https://pas.suning.com/nspcsale_{c}_{sn_passpartnum}_{sn_partNumber}_{vendor_code}_20_021_0210199_157122_1000267_9264_12113_Z001___{procatecode}_1.48_0___000058759____0___{volume}_2_01_{categroy_id_2}_{categroy_id_1}_.html?_=' + str(_)
         yield scrapy.Request(info_url,callback=self.parse_goods_info_detail,meta={'item':item,'prdtype':prdtype,'vendor_code':vendor_code,'shop_type':shop_type,'sn_passpartnum':sn_passpartnum,'sn_partNumber':sn_partNumber,'cluster_id':cluster_id})
 

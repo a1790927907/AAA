@@ -10,10 +10,36 @@ from multiprocessing import Process
 import time
 from orm import SaveData
 from settings import *
+import pymysql
 if __name__ == '__main__':
-    sql = SaveData(MYSQL_USERNAME,MYSQL_PWD,MYSQL_DATABASE)
-    sql.create_database('bd')
+    try:
+        with open('file.txt','r') as f:
+            c = f.read()
+            c = c.split(',')
+        with open('file.txt','w') as f1:
+            f1.write('')
+            f1.flush()
+    except:
+        pass
+    #在一开始就创建数据库
+    mysql1 = pymysql.connect('mysql','root','0365241lk')
+    cursor1 = mysql1.cursor()
+    sqlcmd = f'create database if not exists {MYSQL_DATABASE};'
+    cursor1.execute(sqlcmd)
+    mysql1.commit()
+    while True:
+        try:
+            #不断连接直到连接成功
+            sql = SaveData(MYSQL_USERNAME,MYSQL_PWD,MYSQL_DATABASE)
+            sql.create_database('bd')
+            break
+        except:
+            continue
     queue_action = sp_queue.QueueAction(**configs)
+    try:
+        queue_action.save_key_words(c)
+    except:
+        pass
     redis_cursor = queue_action.redis_cursor
     process_list = []
     finish_flag = 0
