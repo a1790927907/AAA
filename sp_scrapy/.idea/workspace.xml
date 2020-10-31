@@ -20,12 +20,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="bab35292-663f-4318-9a2f-d58644af5280" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/../sp_requests/.idea/encodings.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/encodings.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../sp_requests/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/../sp_requests/main.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../sp_requests/orm.py" beforeDir="false" afterPath="$PROJECT_DIR$/../sp_requests/orm.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -100,10 +96,10 @@
     </option>
   </component>
   <component name="WindowStateProjectService">
-    <state x="440" y="131" key="FileChooserDialogImpl" timestamp="1604116798764">
+    <state x="440" y="131" key="FileChooserDialogImpl" timestamp="1604141052044">
       <screen x="0" y="0" width="1366" height="728" />
     </state>
-    <state x="440" y="131" key="FileChooserDialogImpl/0.0.1366.728@0.0.1366.728" timestamp="1604116798764" />
+    <state x="440" y="131" key="FileChooserDialogImpl/0.0.1366.728@0.0.1366.728" timestamp="1604141052044" />
     <state width="1262" height="216" key="GridCell.Tab.0.bottom" timestamp="1604116982027">
       <screen x="0" y="0" width="1366" height="728" />
     </state>

@@ -8,7 +8,7 @@ def st():
 
 if __name__ == '__main__':
     try:
-        with open('file.txt','r',encoding='gbk') as f:
+        with open('file.txt','r') as f:
             c = f.read()
             c = c.split(',')
         with open('file.txt','w') as f1:
