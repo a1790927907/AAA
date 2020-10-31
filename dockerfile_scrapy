@@ -1,7 +1,7 @@
 FROM python:3.8
 WORKDIR sp_scrapy/
 COPY sp_scrapy .
-RUN pip3 install -r requirements.txt -i https://mirrors.aliyun.com/pypi/simple/
+RUN pip3 install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
 COPY sources.list /etc/apt
 RUN apt-get update \
     && apt-get install nodejs --assume-yes
