@@ -8,3 +8,6 @@
 - docker-compose使用
     - 使用docker-compose -f docker-compose_requests.yml up -d --build直接运行sp_requests
     - 使用docker-compose -f docker-compose_scrapy.yml up -d --build直接运行sp_scrapy
+- key_words
+    - 在file.txt中添加key_words,key_words之间以英文逗号隔开
+        - eg: aaa,bbb,ccc
