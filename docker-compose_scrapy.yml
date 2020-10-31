@@ -20,7 +20,7 @@ services:
       context: ./
       dockerfile: dockerfile_scrapy
     image: custom_scrapy:1.0
-    container_name:sp_scrapy
+    container_name: sp_scrapy
     links:
       - redis
       - mongodb
