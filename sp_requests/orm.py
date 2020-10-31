@@ -35,7 +35,7 @@ class SaveData(object):
             self.mysql.rollback()
 
     def create_database(self,tbname):
-        sqlcmd = f'create table if not exists {tbname}(id int auto_increment primary key,key_words varchar(150) not null,title varchar(150) not null,time datetime not null);'
+        sqlcmd = f'create table if not exists {tbname}(id int auto_increment primary key,key_word varchar(150) not null,title varchar(150) not null,time datetime not null);'
         self.cursor.execute(sqlcmd)
         self.mysql.commit()
 

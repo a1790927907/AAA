@@ -34,11 +34,14 @@ if __name__ == '__main__':
     sqlcmd = f'create database if not exists {MYSQL_DATABASE};'
     cursor1.execute(sqlcmd)
     mysql1.commit()
+    cursor1.close()
+    mysql1.close()
     while True:
         try:
             #不断连接直到连接成功
             sql = SaveData(MYSQL_USERNAME,MYSQL_PWD,MYSQL_DATABASE)
             sql.create_database('bd')
+            sql.sclose()
             break
         except:
             continue

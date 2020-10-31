@@ -36,7 +36,6 @@ def save_data_to_sql(data_generator):
         time.sleep(0.2)
         sql.save_data(data,'bd')
 
-
 def run_spider(key_word):
     num = 0
     b = spider.Baidu(key_word)
