@@ -13,7 +13,7 @@ from settings import *
 import pymysql
 if __name__ == '__main__':
     try:
-        with open('file.txt','r') as f:
+        with open('file.txt','r',encoding='gbk') as f:
             c = f.read()
             c = c.split(',')
         with open('file.txt','w') as f1:
@@ -21,8 +21,15 @@ if __name__ == '__main__':
             f1.flush()
     except:
         pass
+    #docker镜像mysql启动慢，需要等待
+    time.sleep(5)
     #在一开始就创建数据库
-    mysql1 = pymysql.connect('mysql','root','0365241lk')
+    while True:
+        try:
+            mysql1 = pymysql.connect(host='mysql',user='root',passwd='0365241lk',port=3306)
+            break
+        except:
+            continue
     cursor1 = mysql1.cursor()
     sqlcmd = f'create database if not exists {MYSQL_DATABASE};'
     cursor1.execute(sqlcmd)

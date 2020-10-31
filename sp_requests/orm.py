@@ -7,7 +7,7 @@ class SaveData(object):
         self.uername = username
         self.password = password
         self.dbname = dbname
-        self.mysql = pymysql.connect(self.host,self.uername,self.password,self.dbname)
+        self.mysql = pymysql.connect(host=self.host,user=self.uername,passwd=self.password,db=self.dbname,port=3306)
         self.cursor = self.mysql.cursor()
 
     #字典形式传入data
