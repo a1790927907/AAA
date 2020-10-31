@@ -32,7 +32,10 @@ if __name__ == '__main__':
             continue
     cursor1 = mysql1.cursor()
     sqlcmd = f'create database if not exists {MYSQL_DATABASE};'
+    #直接修改mysql字符集，避免乱码
+    sqlcmd1 = f'alter database {MYSQL_DATABASE} character set utf8mb4 collate utf8mb4_unicode_ci;'
     cursor1.execute(sqlcmd)
+    cursor1.execute(sqlcmd1)
     mysql1.commit()
     cursor1.close()
     mysql1.close()
