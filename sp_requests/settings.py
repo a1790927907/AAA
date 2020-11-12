@@ -1,31 +1,25 @@
-#redis配置
+
 configs = {
     'host':'redis',
-    'password':'',
-    'port':6379,
+    'password':'0365241lk',
+    'port':6379
 }
 
-#用于读取关键词的文件
-#关键词用逗号隔开，无须换行
-#若无，则不写
-file_path = ''
+MYSQL_USER = 'root'
+MYSQL_HOST = 'mysql'
+MYSQL_PASSWORD = '0365241lk'
+MYSQL_PORT = 3306
+MYSQL_DB = 'baidu'
+MYSQL_TABLE = 'bd'
 
-#请求间隔
 DOWNLOAD_DELAY = 1
+BASE_URL = 'https://www.baidu.com/'
 
-#每次处理多少数据
-DATA_MANAGE_NUM = 16
+#最大线程数
+CONCURRENT_REQUESTS = 10
 
-#mysql配置
-MYSQL_USERNAME = 'root'
-MYSQL_PWD = '0365241lk'
-MYSQL_DATABASE = 'baidu'
-
-#可根据CPU核心数设定进程数量
-#若不设定即无限
-MAX_PROCESS_NUM = 2
-
-
+#最大进程数
+MAX_PROCESS = 2
 
 
 

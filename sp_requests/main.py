@@ -1,97 +1,70 @@
-'''
-###主入口
- - 只有当所有进程结束后才会结束，一个关键词创建一个新的进程，可以在中途加入新的字段
- - 新字段的加入根据settings.py里面的最大进程数来决定什么时候运行
- - 如果没有设置最大进程数，字段加入后会立刻执行
- - 想要加入字段调用sp_queue.py
-'''
+from sp_queue import *
+from concurrent.futures.process import ProcessPoolExecutor
 from middle import *
-from multiprocessing import Process
 import time
-from orm import SaveData
-from settings import *
+from functools import partial
 import pymysql
+
 if __name__ == '__main__':
-    try:
-        with open('file.txt','r') as f:
-            c = f.read()
-            c = c.split(',')
-        with open('file.txt','w') as f1:
-            f1.write('')
-            f1.flush()
-    except:
-        pass
-    #docker镜像mysql启动慢，需要等待
+    #配合docker，这里停5s
     time.sleep(5)
-    #在一开始就创建数据库
     while True:
         try:
-            mysql1 = pymysql.connect(host='mysql',user='root',passwd='0365241lk',port=3306)
+            sql = pymysql.connect(host=MYSQL_HOST, user=MYSQL_USER, passwd=MYSQL_PASSWORD, port=MYSQL_PORT)
             break
         except:
             continue
-    cursor1 = mysql1.cursor()
-    sqlcmd = f'create database if not exists {MYSQL_DATABASE};'
-    #直接修改mysql字符集，避免乱码
-    sqlcmd1 = f'alter database {MYSQL_DATABASE} character set utf8mb4 collate utf8mb4_unicode_ci;'
-    cursor1.execute(sqlcmd)
-    cursor1.execute(sqlcmd1)
-    mysql1.commit()
-    cursor1.close()
-    mysql1.close()
-    while True:
-        try:
-            #不断连接直到连接成功
-            sql = SaveData(MYSQL_USERNAME,MYSQL_PWD,MYSQL_DATABASE)
-            sql.create_database('bd')
-            sql.sclose()
-            break
-        except:
-            continue
-    queue_action = sp_queue.QueueAction(**configs)
-    try:
-        queue_action.save_key_words(c)
-    except:
-        pass
+    cursor = sql.cursor()
+    sqlcmd = f'create database if not exists {MYSQL_DB};'
+    sqlcmd1 = f'alter database {MYSQL_DB} character set utf8mb4 collate utf8mb4_unicode_ci;'
+    cursor.execute(sqlcmd)
+    cursor.execute(sqlcmd1)
+    sql.commit()
+    cursor.close()
+    sql.close()
+    new_sql = Orm()
+    new_sql.create_table(MYSQL_TABLE)
+    new_sql.sclose()
+
+    queue_action = QueueAction(**configs)
+    pool = ProcessPoolExecutor(max_workers=MAX_PROCESS)
+    with open('file.txt','r',encoding='utf-8') as f:
+        key_words = f.read()
+    key_words = key_words.split(',')
+    queue_action.save_key_words(key_words)
     redis_cursor = queue_action.redis_cursor
-    process_list = []
-    finish_flag = 0
-    try:
-        max_process = MAX_PROCESS_NUM
-    except:
-        max_process = None
+    time.sleep(0.2)
+    all_process = []
+    all_key_words = queue_action.get_all_key_words()
+    all_key_words_bak = all_key_words.copy()
     while True:
-        key_words_in_redis = queue_action.get_key_words()
-        if max_process:
-            if len(process_list) < max_process:
-                key_w = key_words_in_redis[:(max_process-len(process_list))]
-                for word in key_w:
-                    print(word.decode())
-                    process = Process(target=run_spider, args=(word.decode(),))
-                    process.start()
-                    process_list.append(process)
-                    queue_action.pop_key_word(word)
+        bak = all_key_words.copy()
+        for key_word in bak:
+            a = pool.submit(fetch_all,key_word,use_redis=True)
+            a.add_done_callback(partial(pop_key_word,key_word))
+            all_process.append(a)
+            all_key_words.remove(key_word)
 
-        else:
-            for word in key_words_in_redis:
-                print(word.decode())
-                process = Process(target=run_spider, args=(word.decode(),))
-                process.start()
-                process_list.append(process)
-                queue_action.pop_key_word(word)
-
-        for p in process_list:
-            if not p.is_alive():
-                process_list.remove(p)
-
-        if finish_flag:
+        new_get_key_words = queue_action.get_all_key_words()
+        for j in all_key_words_bak:
+            try:
+                new_get_key_words.remove(j)
+            except:
+                pass
+        if new_get_key_words != []:
+            for l in new_get_key_words:
+                all_key_words.append(l)
+                all_key_words_bak.append(l)
+            continue
+        process_status = [i.running() for i in all_process]
+        st = list(map(lambda x:int(x),process_status))
+        if (1 not in st):
             break
 
-        if process_list == []:
-            finish_flag = 1
 
-        time.sleep(5)
-    redis_cursor.close()
+
+
+
 
 
 

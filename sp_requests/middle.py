@@ -1,122 +1,141 @@
-import orm
-import sp_queue
-import spider
+'''
+将所有功能整合起来
+'''
+from spider import *
+from orm import *
 from settings import *
-import threading
 import time
+from urllib.parse import quote
+from concurrent.futures.thread import ThreadPoolExecutor
+from sp_queue import *
+import requests
+from requests.utils import dict_from_cookiejar
 
-headers = {
-    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
-    'Accept-Encoding': 'gzip, deflate, br',
-    'Accept-Language': 'zh-CN,zh;q=0.9',
-    'Cookie': 'BAIDUID=8C34F3725437FDB859AA39E5FDFFD164:FG=1;',
-    "User-Agent": "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.132 Safari/537.36"
-}
-#由于需要返回值，所以重写Thread
-class MyThread(threading.Thread):
-    def __init__(self,func,args=(),kwargs={}):
-        super(MyThread,self).__init__()
-        self.func = func
-        self.args = args
-        self.kwargs = kwargs
-    def run(self):
-        self.result = self.func(*self.args,**self.kwargs)
-    def get_result(self):
-        try:
-            return self.result
-        except Exception:
-            return None
+all_thread = []
+#在某个进程完成时删除对应的key_word
+def pop_key_word(key_word,future):
+    _queue_action = QueueAction(**configs)
+    _queue_action.pop_key_word(key_word.encode())
+    _queue_action.qclose()
 
-def save_data_to_sql(data_generator):
-    #每次需要创建新的连接，解决互斥锁的问题
-    sql = orm.SaveData(MYSQL_USERNAME, MYSQL_PWD, MYSQL_DATABASE)
-    for data in data_generator:
-        print(data)
-        #sleep一段时间解决数据库无法长时间alive问题以及其他问题
-        time.sleep(0.2)
-        sql.save_data(data,'bd')
+#用于获取baiduuid
+def get_baiduuid():
+    url = 'https://www.baidu.com/'
+    h = {
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'Accept-Language': 'zh-CN,zh;q=0.9',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.183 Safari/537.36'
+    }
+    res = requests.get(url,headers=h)
+    cookies = dict_from_cookiejar(res.cookies)
+    return ('BAIDUID=' + cookies['BAIDUID'] + ';')
 
-def run_spider(key_word):
-    num = 0
-    b = spider.Baidu(key_word)
-    thread_dict = {}
-    next_page = b.start_url
-    page_flag = 0
-    r = spider.Request()
-    queue_action = sp_queue.QueueAction(**configs)
-    redis_cursor = queue_action.redis_cursor
-    cookie_flag = 0
-    #请求部分全部写在这里
+def save_data():
+    global global_list
+    global end_flag
+    sql = Orm()
     while True:
-        #创建多个线程访问
-        #num用于判定是否是start_url
-        if num == 0:
-            thread_dict['tp' + str(num)] = MyThread(func=r.make_requests, args=(next_page, b.parse, headers,True),kwargs={'redis_cursor': redis_cursor})
-            thread_dict['pp' + str(num)] = MyThread(func=r.make_requests, args=(next_page, b.parse_page_url, headers, True),kwargs={'redis_cursor': redis_cursor})
-            thread_dict['tp' + str(num)].start()
-            time.sleep(DOWNLOAD_DELAY)
-            thread_dict['pp' + str(num)].start()
+        global_list_bak = global_list.copy()
+        # if global_list_bak != []:
+        #     print(global_list_bak)
+        for data in global_list_bak:
+            sql.insert_data(MYSQL_TABLE,data)
+            global_list.remove(data)
 
-        elif num != 0:
-            if cookie_flag:
-                thread_dict['tp' + str(num)] = MyThread(func=r.make_requests, args=(next_page, b.parse, headers,True),kwargs={'redis_cursor': redis_cursor})
-                cookie_flag = 0
-            else:
-                thread_dict['tp' + str(num)] = MyThread(func=r.make_requests, args=(next_page, b.parse, headers),kwargs={'redis_cursor': redis_cursor})
-            thread_dict['pp' + str(num)] = MyThread(func=r.make_requests,args=(next_page, b.parse_page_url, headers,True),kwargs={'redis_cursor': redis_cursor})
-            thread_dict['tp' + str(num)].start()
-            time.sleep(DOWNLOAD_DELAY)
-            thread_dict['pp' + str(num)].start()
-
-        #由于线程的同时执行问题，next_page返回的速度跟不上执行的速度
-        #这里需要等next_page取到值
-        #这里应该不要等待，但是如果没有next_page就无法开始下一次的请求，所以这里就会耗时(待解决)
-        while True:
-            #具体见spider.py
-            if (thread_dict['pp' + str(num)].get_result() is not None) and (thread_dict['pp' + str(num)].get_result() != 'no next') and (not isinstance(thread_dict['pp' + str(num)].get_result(),dict)):
-                next_page = thread_dict.pop('pp' + str(num))
-                next_page = next_page.get_result()
-                num += 1
-                break
-
-            #跳过百度搜索的验证码检测
-            elif isinstance(thread_dict['pp' + str(num)].get_result(),dict):
-                bdcookie = thread_dict['pp' + str(num)].get_result()
-                if bdcookie.get('BAIDUID'):
-                    headers['Cookie'] = f"BAIDUID={bdcookie.get('BAIDUID')};"
-                    #避免未处理的url被去重
-                    cookie_flag = 1
-                    break
-                else:
-                    print('log cookie:')
-                    print(bdcookie.get('BAIDUID'))
-                    page_flag = 1
-                    break
-
-            if thread_dict['pp' + str(num)].get_result() == 'no next':
-                thread_dict.pop('pp' + str(num))
-                #说明到了最后一页
-                page_flag = 1
-                break
-
-        #采取一次性处理指定量数据的方式
-        #数据量在settings里面设置
-        if (len(thread_dict) > DATA_MANAGE_NUM) or page_flag == 1:
-            #由于pop操作，所以需要一份新的thread_dict
-            thread_dict_copy = thread_dict.copy()
-            for key in thread_dict_copy:
-                #采用了同请求过滤的模式
-                if ('tp' in key) and (thread_dict[key].get_result() is not None) and (thread_dict[key].get_result() != 'exists'):
-                    generator_result = thread_dict.pop(key)
-                    generator_result = generator_result.get_result()
-                    t = threading.Thread(target=save_data_to_sql, args=(generator_result,))
-                    t.start()
-                elif thread_dict[key].get_result() == 'exists':
-                    thread_dict.pop(key)
-        if page_flag == 1:
-            print(page_flag)
+        holder = [t.running() for t in all_thread]
+        thread_over_status = list(map(lambda x:int(x),holder))
+        if end_flag['status'] == 1 and global_list == [] and (1 not in thread_over_status):
+            print('over sql')
+            sql.sclose()
             break
-        time.sleep(DOWNLOAD_DELAY)
+
+#纪录线程池错误日志
+def error_log(future):
+    if future.exception():
+        print(future.exception())
+
+def fetch_all(key_word,use_redis=False):
+    global global_request_url
+    global global_uncomplete_url
+    global headers
+    global end_flag
+    global all_thread
+    global bd_uid
+    #获取10个baiduuid，数量无所谓，尽量超过10个，也可以选择事先存储在redis里
+    for _ in range(10):
+        bd_uid.append(get_baiduuid())
+        time.sleep(0.1)
+    #创建线程池
+    pool = ThreadPoolExecutor(max_workers=CONCURRENT_REQUESTS)
+    pool1 = ThreadPoolExecutor(max_workers=1)
+    #直接死循环开启sql检测数据状态
+    pool1.submit(save_data)
+    bd_request = BdRequests()
+    bd_s = BdSp(key_word)
+    queue_a = QueueAction(**configs)
+    redis_cursor = queue_a.redis_cursor
+    #起点url
+    base = 'https://www.baidu.com/s?wd=' + quote(key_word)
+    global_request_url.append(base)
+    while True:
+        global_url_bak = global_request_url.copy()
+        global_uncomplete_url_bak = global_uncomplete_url.copy()
+        #有未完成的，加入请求列表
+        for uncomplete in global_uncomplete_url_bak:
+            global_url_bak.insert(0,uncomplete)
+            global_uncomplete_url.remove(uncomplete)
+
+        for url in global_url_bak:
+            #提交请求到线程池
+            if not use_redis:
+                if base == url:
+                    c = pool.submit(bd_request.make_request, url, bd_s.parse_next_page, headers, dont_filter=True)
+                    c.add_done_callback(error_log)
+                    all_thread.append(c)
+                else:
+                    c = pool.submit(bd_request.make_request, url, bd_s.parse_detail, headers)
+                    #获取下一页这里每次开启都要获取，否则会死循环
+                    d = pool.submit(bd_request.make_request, url, bd_s.parse_next_page, headers,dont_filter=True)
+                    c.add_done_callback(error_log)
+                    d.add_done_callback(error_log)
+                    all_thread.append(c)
+                    all_thread.append(d)
+            else:
+                if base == url:
+                    c = pool.submit(bd_request.make_request, url, bd_s.parse_next_page, headers, dont_filter=True,redis_cursor=redis_cursor)
+                    c.add_done_callback(error_log)
+                    all_thread.append(c)
+                else:
+                    c = pool.submit(bd_request.make_request, url, bd_s.parse_detail, headers,redis_cursor=redis_cursor)
+                    d = pool.submit(bd_request.make_request, url, bd_s.parse_next_page, headers,redis_cursor=redis_cursor,dont_filter=True)
+                    c.add_done_callback(error_log)
+                    d.add_done_callback(error_log)
+                    all_thread.append(c)
+                    all_thread.append(d)
+            try:
+                #每次请求完毕删除请求列表
+                #会出错是由于uncomplete的缘故，无需处理
+                global_request_url.remove(url)
+            except:
+                pass
+            time.sleep(DOWNLOAD_DELAY)
+        # if global_url_bak != []:
+        #     print(global_url_bak)
+        #     print('=' * 100)
+        # print([t.running() for t in all_thread])
+        holder = [t.running() for t in all_thread]
+        thread_over_status = list(map(lambda x:int(x),holder))
+        if end_flag['status'] == 1 and global_url_bak == [] and (1 not in thread_over_status):
+            print('over main')
+            if use_redis:
+                queue_a.qclose()
+            break
+
+
+if __name__ == '__main__':
+    fetch_all('北京')
+
 
 
 

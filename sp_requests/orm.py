@@ -1,51 +1,38 @@
 import pymysql
-from datetime import datetime
-#数据库操作
-class SaveData(object):
-    def __init__(self,username,password,dbname,host='mysql'):
-        self.host = host
-        self.uername = username
-        self.password = password
-        self.dbname = dbname
-        self.mysql = pymysql.connect(host=self.host,user=self.uername,passwd=self.password,db=self.dbname,port=3306)
+from settings import *
+
+class Orm(object):
+    def __init__(self):
+        self.mysql = pymysql.connect(host=MYSQL_HOST,user=MYSQL_USER,passwd=MYSQL_PASSWORD,port=MYSQL_PORT,db=MYSQL_DB)
         self.cursor = self.mysql.cursor()
 
-    #字典形式传入data
-    #确保mysql里有对应的表
-    def save_data(self,data,tbname):
-        all_keys = [all_key_v[0] for all_key_v in data.items()]
-        keys_str = ','.join(all_keys)
-        values_list = []
-        for k,val in data.items():
-            if isinstance(val,str):
-                values_list.append(f'"{val}"')
-            elif isinstance(val,bool):
-                values_list.append(str(int(val)))
-            else:
-                values_list.append(f'{val}')
-        values_str = ','.join(values_list)
-        sqlcmd = f'insert into {tbname}({keys_str}) values({values_str})'
-        try:
-            #缓解Lost connection to MySQL server问题
-            #具体解决在middle.py
-            self.mysql.ping(reconnect=True)
-            self.cursor.execute(sqlcmd)
-            self.mysql.commit()
-        except:
-            self.mysql.rollback()
-
-    def create_database(self,tbname):
-        sqlcmd = f'create table if not exists {tbname}(id int auto_increment primary key,key_word varchar(150) not null,title varchar(150) not null,time datetime not null);'
+    def create_table(self,tbname):
+        sqlcmd = f'create table if not exists {tbname}(id int auto_increment primary key,key_word varchar(150) not null,title varchar(150) not null,url text not null,time datetime not null,img_url text);'
         self.cursor.execute(sqlcmd)
         self.mysql.commit()
 
+    def insert_data(self,tbname,data):
+        l_bak = ['id'] + [i for i in data.keys()]
+        v_bak = tuple([i for i in data.values()])
+        s_bak = tuple(['0'] + ['%s'] * len(v_bak))
+        sql_l_bak = ','.join(l_bak)
+        sql_s_bak = ','.join(s_bak)
+        sqlcmd = f'insert into {tbname}({sql_l_bak}) values({sql_s_bak});'
+        params = [v_bak]
+        self.cursor.executemany(sqlcmd,params)
+        self.mysql.commit()
+
     def sclose(self):
-        self.cursor.close()
         self.mysql.close()
+        self.cursor.close()
 
 if __name__ == '__main__':
-    s = SaveData('root','0365241lk','baidu')
-    s.save_data({'key_word': '上海', 'time': '2020-10-23 23:36:11', 'title': '上海-品牌项目信息'},'bd')
+    orm = Orm()
+    orm.create_table('bd')
+    orm.insert_data('bd',{'key_word': '上海', 'title': '上海市人民政府', 'url': 'http://www.baidu.com/link?url=SIu0vCMmUjFjbcxcsfbVXkJhqg-tfZhtTUMda-ScnO1sCBTH9pMczD4_KNIVWl-B', 'time': '2020-11-07 06:15:36', 'img_url': '["https://dss1.bdstatic.com/6OF1bjeh1BF3odCf/it/u=2423316306,4063082714&fm=85&app=81&f=JPEG?w=121&h=75&s=8180FE168CA0FE1313DC2DFE0300D033"]'})
+
+
+
 
 
 
