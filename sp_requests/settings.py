@@ -1,7 +1,7 @@
 
 configs = {
     'host':'redis',
-    'password':'0365241lk',
+    'password':'',
     'port':6379
 }
 
